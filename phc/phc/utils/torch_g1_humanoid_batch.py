@@ -36,17 +36,53 @@ H1_ROTATION_AXIS = torch.tensor([[
     [0, 1, 0], # r_elbow
 ]])
 
+G1_ROTATION_AXIS = torch.tensor([[
+    [0, 1, 0], #l_hip_pitch
+    [1, 0, 0], #l_hip_roll
+    [0, 0, 1], #l_hip_yaw
+
+    [0, 1, 0], #l_knee
+    [0, 1, 0], #l_ankle_pitch
+    [1, 0, 0], #l_ankle_roll
+    
+    [0, 1, 0], #r_hip_pitch
+    [1, 0, 0], #r_hip_roll
+    [0, 0, 1], #r_hip_yaw
+    
+    [0, 1, 0], #r_knee
+    [0, 1, 0], #r_ankle_pitch
+    [1, 0, 0], #r_ankle_roll
+    
+    [0, 0, 1], #waist_yaw
+    
+    [0, 1, 0], #l_shoulder_pitch
+    [1, 0, 0], #l_shoulder_roll
+    [0, 0, 1], #l_shoulder_yaw
+    
+    [0, 1, 0], #l_elbow
+    [1, 0, 0], #l_wrist_roll
+    
+    [0, 1, 0], #r_shoulder_pitch
+    [1, 0, 0], #r_shoulder_roll
+    [0, 0, 1], #r_shoulder_yaw
+    
+    [0, 1, 0], #r_elbow
+    [1, 0, 0]  #r_wrist_roll
+]])
+#['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+
 
 class Humanoid_Batch:
 
-    def __init__(self, mjcf_file = f"resources/robots/h1/h1.xml", extend_hand = True, extend_head = False, device = torch.device("cpu")):
+    def __init__(self, mjcf_file = f"resources/robots/g1/g1.xml", extend_hand = True, extend_head = False, device = torch.device("cpu")):
         self.mjcf_data = mjcf_data = self.from_mjcf(mjcf_file)
         self.extend_hand = extend_hand
         self.extend_head = extend_head
         if extend_hand:
             self.model_names = mjcf_data['node_names'] + ["left_hand_link", "right_hand_link"]
             self._parents = torch.cat((mjcf_data['parent_indices'], torch.tensor([15, 19]))).to(device) # Adding the hands joints
-            arm_length = 0.3
+            arm_length = 0.2 #OG: 0.3
             self._offsets = torch.cat((mjcf_data['local_translation'], torch.tensor([[arm_length, 0, 0], [arm_length, 0, 0]])), dim = 0)[None, ].to(device)
             self._local_rotation = torch.cat((mjcf_data['local_rotation'], torch.tensor([[1, 0, 0, 0], [1, 0, 0, 0]])), dim = 0)[None, ].to(device)
             self._remove_idx = 2
@@ -60,7 +96,7 @@ class Humanoid_Batch:
             self._remove_idx = 3
             self.model_names = self.model_names + ["head_link"]
             self._parents = torch.cat((self._parents, torch.tensor([0]).to(device))).to(device) # Adding the hands joints
-            head_length = 0.75
+            head_length = 0.5 #0.6, OG: 0.75
             self._offsets = torch.cat((self._offsets, torch.tensor([[[0, 0, head_length]]]).to(device)), dim = 1).to(device)
             self._local_rotation = torch.cat((self._local_rotation, torch.tensor([[[1, 0, 0, 0]]]).to(device)), dim = 1).to(device)
             
