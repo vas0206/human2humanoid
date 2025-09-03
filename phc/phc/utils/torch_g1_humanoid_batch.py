@@ -6,35 +6,35 @@ from easydict import EasyDict
 import scipy.ndimage.filters as filters
 import smpl_sim.poselib.core.rotation3d as pRot
 
-H1_ROTATION_AXIS = torch.tensor([[
-    [0, 0, 1], # l_hip_yaw
-    [1, 0, 0], # l_hip_roll
-    [0, 1, 0], # l_hip_pitch
+# H1_ROTATION_AXIS = torch.tensor([[
+#     [0, 0, 1], # l_hip_yaw
+#     [1, 0, 0], # l_hip_roll
+#     [0, 1, 0], # l_hip_pitch
     
-    [0, 1, 0], # kneel
-    [0, 1, 0], # ankle
+#     [0, 1, 0], # kneel
+#     [0, 1, 0], # ankle
     
-    [0, 0, 1], # r_hip_yaw
-    [1, 0, 0], # r_hip_roll
-    [0, 1, 0], # r_hip_pitch
+#     [0, 0, 1], # r_hip_yaw
+#     [1, 0, 0], # r_hip_roll
+#     [0, 1, 0], # r_hip_pitch
     
-    [0, 1, 0], # kneel
-    [0, 1, 0], # ankle
+#     [0, 1, 0], # kneel
+#     [0, 1, 0], # ankle
     
-    [0, 0, 1], # torso
+#     [0, 0, 1], # torso
     
-    [0, 1, 0], # l_shoulder_pitch
-    [1, 0, 0], # l_roll_pitch
-    [0, 0, 1], # l_yaw_pitch
+#     [0, 1, 0], # l_shoulder_pitch
+#     [1, 0, 0], # l_roll_pitch
+#     [0, 0, 1], # l_yaw_pitch
     
-    [0, 1, 0], # l_elbow
+#     [0, 1, 0], # l_elbow
     
-    [0, 1, 0], # r_shoulder_pitch
-    [1, 0, 0], # r_roll_pitch
-    [0, 0, 1], # r_yaw_pitch
+#     [0, 1, 0], # r_shoulder_pitch
+#     [1, 0, 0], # r_roll_pitch
+#     [0, 0, 1], # r_yaw_pitch
     
-    [0, 1, 0], # r_elbow
-]])
+#     [0, 1, 0], # r_elbow
+# ]])
 
 G1_ROTATION_AXIS = torch.tensor([[
     [0, 1, 0], #l_hip_pitch
@@ -76,13 +76,16 @@ G1_ROTATION_AXIS = torch.tensor([[
 class Humanoid_Batch:
 
     def __init__(self, mjcf_file = f"resources/robots/g1/g1.xml", extend_hand = True, extend_head = False, device = torch.device("cpu")):
-        self.mjcf_data = mjcf_data = self.from_mjcf(mjcf_file)
+        self.mjcf_data = mjcf_data = self.from_mjcf(mjcf_file) #OG extend_hand = True
         self.extend_hand = extend_hand
         self.extend_head = extend_head
         if extend_hand:
             self.model_names = mjcf_data['node_names'] + ["left_hand_link", "right_hand_link"]
-            self._parents = torch.cat((mjcf_data['parent_indices'], torch.tensor([15, 19]))).to(device) # Adding the hands joints
-            arm_length = 0.2 #OG: 0.3
+            # print(mjcf_data['parent_indices'])
+            # bodies of parent indices
+            # print(self.model_names)
+            self._parents = torch.cat((mjcf_data['parent_indices'], torch.tensor([18, 23]))).to(device) # Adding the hands joints
+            arm_length = 0.0 #OG: 0.3
             self._offsets = torch.cat((mjcf_data['local_translation'], torch.tensor([[arm_length, 0, 0], [arm_length, 0, 0]])), dim = 0)[None, ].to(device)
             self._local_rotation = torch.cat((mjcf_data['local_rotation'], torch.tensor([[1, 0, 0, 0], [1, 0, 0, 0]])), dim = 0)[None, ].to(device)
             self._remove_idx = 2
@@ -100,7 +103,8 @@ class Humanoid_Batch:
             self._offsets = torch.cat((self._offsets, torch.tensor([[[0, 0, head_length]]]).to(device)), dim = 1).to(device)
             self._local_rotation = torch.cat((self._local_rotation, torch.tensor([[[1, 0, 0, 0]]]).to(device)), dim = 1).to(device)
             
-        
+        # print(self._parents)
+        # print(self.model_names)
         self.joints_range = mjcf_data['joints_range'].to(device)
         self._local_rotation_mat = tRot.quaternion_to_matrix(self._local_rotation).float() # w, x, y ,z
         
@@ -158,9 +162,11 @@ class Humanoid_Batch:
     def fk_batch(self, pose, trans, convert_to_mat=True, return_full = False, dt=1/30):
         device, dtype = pose.device, pose.dtype
         pose_input = pose.clone()
+        # print("pose shape:", pose.shape)
         B, seq_len = pose.shape[:2]
         pose = pose[..., :len(self._parents), :] # H1 fitted joints might have extra joints
-        if self.extend_hand and self.extend_head and pose.shape[-2] == 22:
+        if self.extend_hand and self.extend_head and pose.shape[-2] == 32: #OG - 22, length of node names with hand links
+            # print("IT is here")
             pose = torch.cat([pose, torch.zeros(B, seq_len, 1, 3).to(device).type(dtype)], dim = -2) # adding hand and head joints
 
         if convert_to_mat:
@@ -171,6 +177,10 @@ class Humanoid_Batch:
         if pose_mat.shape != 5:
             pose_mat = pose_mat.reshape(B, seq_len, -1, 3, 3)
         J = pose_mat.shape[2] - 1  # Exclude root
+        
+        # print("pose_mat[:, :, 1:] shape:", pose_mat[:, :, 1:].shape)
+        # print("pose_mat[:, :, 0:1] shape:", pose_mat[:, :, 0:1].shape)
+        # print("Trans shape", trans.shape) 
         
         wbody_pos, wbody_mat = self.forward_kinematics_batch(pose_mat[:, :, 1:], pose_mat[:, :, 0:1], trans)
         
@@ -239,11 +249,20 @@ class Humanoid_Batch:
                 positions_world.append(root_positions)
                 rotations_world.append(root_rotations)
             else:
+                if i > 23:
+                    # print(f"i: {i}, self._parents[i]: {self._parents[i]}")
+                    # print("rotations_world[self._parents[i-1]] shape:", rotations_world[self._parents[i-1]].shape)
+                    # print("rotations_world[self._parents[i]] shape:", rotations_world[self._parents[i]].shape)
+                    # print("expanded_offsets[:, :, i, :, None] shape:", expanded_offsets[:, :, i, :, None].shape)
+                    # print("positions_world[self._parents[i]] shape:", positions_world[self._parents[i]].shape)
+                    # print("self._local_rotation_mat[:,  (i):(i + 1)] shape:", self._local_rotation_mat[:,  (i):(i + 1)].shape)
+                    # print("rotations[:, :, (i - 1):i, :] shape:", rotations[:, :, (i - 1):i, :].shape)
+                    pass
                 jpos = (torch.matmul(rotations_world[self._parents[i]][:, :, 0], expanded_offsets[:, :, i, :, None]).squeeze(-1) + positions_world[self._parents[i]])
                 rot_mat = torch.matmul(rotations_world[self._parents[i]], torch.matmul(self._local_rotation_mat[:,  (i):(i + 1)], rotations[:, :, (i - 1):i, :]))
                 # rot_mat = torch.matmul(rotations_world[self._parents[i]], rotations[:, :, (i - 1):i, :])
                 # print(rotations[:, :, (i - 1):i, :].shape, self._local_rotation_mat.shape)
-                
+                # print("Shape of rot_mat:", rot_mat.shape)
                 positions_world.append(jpos)
                 rotations_world.append(rot_mat)
         

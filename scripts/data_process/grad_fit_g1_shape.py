@@ -33,17 +33,22 @@ from phc.utils.torch_g1_humanoid_batch import Humanoid_Batch, G1_ROTATION_AXIS
 #                    'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 'left_elbow_link', 
 #                   'right_shoulder_pitch_link', 'right_shoulder_roll_link', 'right_shoulder_yaw_link', 'right_elbow_link']
 
+# g1_joint_names = ['pelvis', 'left_hip_pitch_link', 'left_hip_roll_link', 'left_hip_yaw_link', 'left_knee_link', 'left_ankle_pitch_link', 
+#                   'left_ankle_roll_link', 'right_hip_pitch_link', 'right_hip_roll_link', 'right_hip_yaw_link', 'right_knee_link', 'right_ankle_pitch_link', 
+#                   'right_ankle_roll_link', 'waist_yaw_link', 'waist_roll_link', 'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 
+#                   'left_elbow_link', 'left_wrist_roll_link', 'left_wrist_pitch_link', 'left_wrist_yaw_link', 'right_shoulder_pitch_link', 'right_shoulder_roll_link', 
+#                   'right_shoulder_yaw_link', 'right_elbow_link', 'right_wrist_roll_link', 'right_wrist_pitch_link', 'right_wrist_yaw_link']
+
 g1_joint_names = ['pelvis', 'left_hip_pitch_link', 'left_hip_roll_link', 'left_hip_yaw_link', 'left_knee_link', 'left_ankle_pitch_link', 
                   'left_ankle_roll_link', 'right_hip_pitch_link', 'right_hip_roll_link', 'right_hip_yaw_link', 'right_knee_link', 'right_ankle_pitch_link', 
-                  'right_ankle_roll_link', 'waist_yaw_link', 'waist_roll_link', 'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 
-                  'left_elbow_link', 'left_wrist_roll_link', 'left_wrist_pitch_link', 'left_wrist_yaw_link', 'right_shoulder_pitch_link', 'right_shoulder_roll_link', 
-                  'right_shoulder_yaw_link', 'right_elbow_link', 'right_wrist_roll_link', 'right_wrist_pitch_link', 'right_wrist_yaw_link']
+                  'right_ankle_roll_link', 'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 'left_elbow_link', 
+                  'left_wrist_roll_rubber_hand', 'right_shoulder_pitch_link', 'right_shoulder_roll_link', 'right_shoulder_yaw_link', 'right_elbow_link', 
+                  'right_wrist_roll_rubber_hand']
 
-
-g1_fk = Humanoid_Batch(extend_head=True) # load forward kinematics model
+g1_fk = Humanoid_Batch(extend_hand = True, extend_head=True) # load forward kinematics model
 #### Define corresonpdances between g1 and smpl joints
 g1_joint_names_augment = g1_joint_names + ["left_hand_link", "right_hand_link", "head_link"]
-g1_joint_pick = ['pelvis',  'left_hip_yaw_link', "left_knee_link", "left_ankle_link",  'right_hip_yaw_link', 'right_knee_link', 'right_ankle_link', "left_shoulder_roll_link", "left_elbow_link", "left_hand_link", "right_shoulder_roll_link", "right_elbow_link", "right_hand_link", "head_link"]
+g1_joint_pick = ['pelvis',  'left_hip_yaw_link', "left_knee_link", "left_ankle_pitch_link",  'right_hip_yaw_link', 'right_knee_link', 'right_ankle_pitch_link', "left_shoulder_roll_link", "left_elbow_link", "left_hand_link", "right_shoulder_roll_link", "right_elbow_link", "right_hand_link", "head_link"]
 smpl_joint_pick = ["Pelvis", "L_Hip",  "L_Knee", "L_Ankle",  "R_Hip", "R_Knee", "R_Ankle", "L_Shoulder", "L_Elbow", "L_Hand", "R_Shoulder", "R_Elbow", "R_Hand", "Head"]
 g1_joint_pick_idx = [ g1_joint_names_augment.index(j) for j in g1_joint_pick]
 smpl_joint_pick_idx = [SMPL_BONE_ORDER_NAMES.index(j) for j in smpl_joint_pick]
@@ -51,12 +56,14 @@ smpl_joint_pick_idx = [SMPL_BONE_ORDER_NAMES.index(j) for j in smpl_joint_pick]
 
 #### Preparing fitting varialbes
 device = torch.device("cpu")
-pose_aa_g1 = np.repeat(np.repeat(sRot.identity().as_rotvec()[None, None, None, ], 22, axis = 2), 1, axis = 1)
+pose_aa_g1 = np.repeat(np.repeat(sRot.identity().as_rotvec()[None, None, None, ], 26, axis = 2), 1, axis = 1) #22
+print("pose_aa_g1 shape 1:", pose_aa_g1.shape)
 pose_aa_g1 = torch.from_numpy(pose_aa_g1).float()
-
-dof_pos = torch.zeros((1, 19))
+print("pose_aa_g1 shape 2:", pose_aa_g1.shape)
+# print("G1_ROTATION_AXIS shape:", G1_ROTATION_AXIS.shape)
+dof_pos = torch.zeros((1, 23)) #OG: 19
 pose_aa_g1 = torch.cat([torch.zeros((1, 1, 3)), G1_ROTATION_AXIS * dof_pos[..., None], torch.zeros((1, 2, 3))], axis = 1)
-
+print("pose_aa_g1 shape 3:", pose_aa_g1.shape)
 
 root_trans = torch.zeros((1, 1, 3))    
 
@@ -79,7 +86,7 @@ beta = torch.zeros([1, 10])
 verts, joints = smpl_parser_n.get_joints_verts(pose_aa_stand, beta , trans)
 offset = joints[:, 0] - trans
 root_trans_offset = trans + offset
-
+print(pose_aa_g1[None, ].shape)
 fk_return = g1_fk.fk_batch(pose_aa_g1[None, ], root_trans_offset[None, 0:1])
 
 shape_new = Variable(torch.zeros([1, 10]).to(device), requires_grad=True)

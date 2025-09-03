@@ -49,7 +49,8 @@ if __name__ == "__main__":
     parser.add_argument("--amass_root", type=str, default="data/AMASS/AMASS_Complete")
     args = parser.parse_args()
     
-    device = torch.device("cpu")
+    # device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     g1_rotation_axis = torch.tensor([[
         [0, 1, 0], #l_hip_pitch
@@ -87,12 +88,12 @@ if __name__ == "__main__":
 
     g1_joint_names = ['pelvis', 'left_hip_pitch_link', 'left_hip_roll_link', 'left_hip_yaw_link', 'left_knee_link', 'left_ankle_pitch_link', 
                   'left_ankle_roll_link', 'right_hip_pitch_link', 'right_hip_roll_link', 'right_hip_yaw_link', 'right_knee_link', 'right_ankle_pitch_link', 
-                  'right_ankle_roll_link', 'waist_yaw_link', 'waist_roll_link', 'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 
-                  'left_elbow_link', 'left_wrist_roll_link', 'left_wrist_pitch_link', 'left_wrist_yaw_link', 'right_shoulder_pitch_link', 'right_shoulder_roll_link', 
-                  'right_shoulder_yaw_link', 'right_elbow_link', 'right_wrist_roll_link', 'right_wrist_pitch_link', 'right_wrist_yaw_link']
+                  'right_ankle_roll_link', 'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 'left_elbow_link', 
+                  'left_wrist_roll_rubber_hand', 'right_shoulder_pitch_link', 'right_shoulder_roll_link', 'right_shoulder_yaw_link', 'right_elbow_link', 
+                  'right_wrist_roll_rubber_hand']
 
     g1_joint_names_augment = g1_joint_names + ["left_hand_link", "right_hand_link"]
-    g1_joint_pick = ['pelvis', "left_knee_link", "left_ankle_link",  'right_knee_link', 'right_ankle_link', "left_shoulder_roll_link", "left_elbow_link", "left_hand_link", "right_shoulder_roll_link", "right_elbow_link", "right_hand_link",]
+    g1_joint_pick = ['pelvis', "left_knee_link", "left_ankle_pitch_link", 'right_knee_link', 'right_ankle_pitch_link', "left_shoulder_roll_link", "left_elbow_link", "left_hand_link", "right_shoulder_roll_link", "right_elbow_link", "right_hand_link"]
     smpl_joint_pick = ["Pelvis",  "L_Knee", "L_Ankle",  "R_Knee", "R_Ankle", "L_Shoulder", "L_Elbow", "L_Hand", "R_Shoulder", "R_Elbow", "R_Hand"]
     g1_joint_pick_idx = [ g1_joint_names_augment.index(j) for j in g1_joint_pick]
     smpl_joint_pick_idx = [SMPL_BONE_ORDER_NAMES.index(j) for j in smpl_joint_pick]
@@ -117,7 +118,11 @@ if __name__ == "__main__":
     data_dump = {}
     pbar = tqdm(key_name_to_pkls.keys())
     for data_key in pbar:
+        # print("Processing ", data_key)
         amass_data = load_amass_data(key_name_to_pkls[data_key])
+        if amass_data is None:
+            # print("Skipping ", data_key)
+            continue
         skip = int(amass_data['fps']//30)
         trans = torch.from_numpy(amass_data['trans'][::skip]).float().to(device)
         N = trans.shape[0]
@@ -128,12 +133,12 @@ if __name__ == "__main__":
         offset = joints[:, 0] - trans
         root_trans_offset = trans + offset
 
-        pose_aa_g1 = np.repeat(np.repeat(sRot.identity().as_rotvec()[None, None, None, ], 22, axis = 2), N, axis = 1)
+        pose_aa_g1 = np.repeat(np.repeat(sRot.identity().as_rotvec()[None, None, None, ], 26, axis = 2), N, axis = 1)
         pose_aa_g1[..., 0, :] = (sRot.from_rotvec(pose_aa_walk.cpu().numpy()[:, :3]) * sRot.from_quat([0.5, 0.5, 0.5, 0.5]).inv()).as_rotvec()
         pose_aa_g1 = torch.from_numpy(pose_aa_g1).float().to(device)
         gt_root_rot = torch.from_numpy((sRot.from_rotvec(pose_aa_walk.cpu().numpy()[:, :3]) * sRot.from_quat([0.5, 0.5, 0.5, 0.5]).inv()).as_rotvec()).float().to(device)
 
-        dof_pos = torch.zeros((1, N, 19, 1)).to(device)
+        dof_pos = torch.zeros((1, N, 23, 1)).to(device)
 
         dof_pos_new = Variable(dof_pos, requires_grad=True)
         optimizer_pose = torch.optim.Adadelta([dof_pos_new],lr=100)
@@ -172,9 +177,9 @@ if __name__ == "__main__":
                 "fps": 30
                 }
         
-        print(f"dumping {data_key} for testing, remove the line if you want to process all data")
-        import ipdb; ipdb.set_trace()
-        joblib.dump(data_dump, "data/g1/test.pkl")
+        # print(f"dumping {data_key} for testing, remove the line if you want to process all data")
+        # import ipdb; ipdb.set_trace()
+        # joblib.dump(data_dump, "data/g1/test.pkl")
     
         
     import ipdb; ipdb.set_trace()
