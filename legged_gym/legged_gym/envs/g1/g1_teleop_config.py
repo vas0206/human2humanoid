@@ -6,25 +6,52 @@ class G1TeleopCfg( LeggedRobotCfg ):
         max_linvel = 0.5
         max_angvel = 0.5
         default_joint_angles = { # = target angles [rad] when action = 0.0
-           'left_hip_yaw_joint' : 0. ,   
-           'left_hip_roll_joint' : 0,               
-           'left_hip_pitch_joint' : -0.4,         
-           'left_knee_joint' : 0.8,       
-           'left_ankle_joint' : -0.4,     
-           'right_hip_yaw_joint' : 0., 
-           'right_hip_roll_joint' : 0, 
-           'right_hip_pitch_joint' : -0.4,                                       
-           'right_knee_joint' : 0.8,                                             
-           'right_ankle_joint' : -0.4,                                     
-           'torso_joint' : 0., 
-           'left_shoulder_pitch_joint' : 0., 
-           'left_shoulder_roll_joint' : 0, 
-           'left_shoulder_yaw_joint' : 0.,
-           'left_elbow_joint'  : 0.,
-           'right_shoulder_pitch_joint' : 0.,
-           'right_shoulder_roll_joint' : 0.0,
-           'right_shoulder_yaw_joint' : 0.,
-           'right_elbow_joint' : 0.,
+        #    'left_hip_yaw_joint' : 0. ,   
+        #    'left_hip_roll_joint' : 0,               
+        #    'left_hip_pitch_joint' : -0.4,         
+        #    'left_knee_joint' : 0.8,       
+        #    'left_ankle_joint' : -0.4,     
+        #    'right_hip_yaw_joint' : 0., 
+        #    'right_hip_roll_joint' : 0, 
+        #    'right_hip_pitch_joint' : -0.4,                                       
+        #    'right_knee_joint' : 0.8,                                             
+        #    'right_ankle_joint' : -0.4,                                     
+        #    'torso_joint' : 0., 
+        #    'left_shoulder_pitch_joint' : 0., 
+        #    'left_shoulder_roll_joint' : 0, 
+        #    'left_shoulder_yaw_joint' : 0.,
+        #    'left_elbow_joint'  : 0.,
+        #    'right_shoulder_pitch_joint' : 0.,
+        #    'right_shoulder_roll_joint' : 0.0,
+        #    'right_shoulder_yaw_joint' : 0.,
+        #    'right_elbow_joint' : 0.,
+
+            'left_hip_yaw_joint' : 0.,
+            'left_hip_roll_joint' : 0,           
+            'left_hip_pitch_joint' : -0.4,      
+            'left_knee_joint' : 0.8,    
+            #'left_ankle_joint' : -0.4,  
+            'left_ankle_pitch_joint' : -0.4,
+            'left_ankle_roll_joint' : 0.0,
+            'right_hip_yaw_joint' : 0., 
+            'right_hip_roll_joint' : 0, 
+            'right_hip_pitch_joint' : -0.4,                                    
+            'right_knee_joint' : 0.8,                                          
+            #right_ankle_joint : -0.4,
+            'right_ankle_pitch_joint' : -0.4,
+            'right_ankle_roll_joint' : 0.0,
+            #'torso_joint' : 0. ,
+            'waist_yaw_joint' : 0.0,
+            'left_shoulder_pitch_joint' : 0. ,
+            'left_shoulder_roll_joint' : 0 ,
+            'left_shoulder_yaw_joint' : 0.,
+            'left_elbow_joint'  : 0.,
+            'left_wrist_roll_joint' : 0.,
+            'right_shoulder_pitch_joint' : 0.,
+            'right_shoulder_roll_joint' : 0.0,
+            'right_shoulder_yaw_joint' : 0.,
+            'right_elbow_joint' : 0.,
+            'right_wrist_roll_joint' : 0.,
         }
     
     class domain_rand ( LeggedRobotCfg.domain_rand ):
@@ -326,27 +353,56 @@ class G1TeleopCfg( LeggedRobotCfg ):
         teleop_body_pos_selection = ['pelvis']
         teleop_body_ang_vel_selection = ['pelvis']
         teleop_joint_pos_selection = {
+                # # upper body
+                # 'torso_joint': 2.0,
+                # 'left_shoulder_pitch_joint': 2.0,
+                # 'left_shoulder_roll_joint': 2.0,
+                # 'left_shoulder_yaw_joint': 2.0,
+                # 'left_elbow_joint': 2.0,
+                # 'right_shoulder_pitch_joint': 2.0,
+                # 'right_shoulder_roll_joint': 2.0,
+                # 'right_shoulder_yaw_joint': 2.0,
+                # 'right_elbow_joint': 2.0,
+                # # lower body
+                # 'left_hip_pitch_joint': 2.0,
+                # 'left_hip_roll_joint': 0.5,
+                # 'left_hip_yaw_joint': 0.5,
+                # 'left_knee_joint': 0.5,
+                # 'left_ankle_joint': 0.5,
+                # 'right_hip_pitch_joint': 2.0,
+                # 'right_hip_roll_joint': 0.5,
+                # 'right_hip_yaw_joint': 0.5,
+                # 'right_knee_joint': 0.5,
+                # 'right_ankle_joint': 0.5,
+                
                 # upper body
-                'torso_joint': 2.0,
+                # torso_joint: 2.0
+                'waist_yaw_joint' : 2.0,
                 'left_shoulder_pitch_joint': 2.0,
                 'left_shoulder_roll_joint': 2.0,
                 'left_shoulder_yaw_joint': 2.0,
                 'left_elbow_joint': 2.0,
+                'left_wrist_roll_joint': 2.0,
                 'right_shoulder_pitch_joint': 2.0,
                 'right_shoulder_roll_joint': 2.0,
                 'right_shoulder_yaw_joint': 2.0,
                 'right_elbow_joint': 2.0,
+                'right_wrist_roll_joint': 2.0,
                 # lower body
                 'left_hip_pitch_joint': 2.0,
                 'left_hip_roll_joint': 0.5,
                 'left_hip_yaw_joint': 0.5,
                 'left_knee_joint': 0.5,
-                'left_ankle_joint': 0.5,
+                # 'left_ankle_joint': 0.5,
+                'left_ankle_pitch_joint': 0.5,
+                'left_ankle_roll_joint': 0.5,
                 'right_hip_pitch_joint': 2.0,
                 'right_hip_roll_joint': 0.5,
                 'right_hip_yaw_joint': 0.5,
                 'right_knee_joint': 0.5,
-                'right_ankle_joint': 0.5,
+                # 'right_ankle_joint': 0.5,
+                'right_ankle_pitch_joint': 0.5,
+                'right_ankle_roll_joint': 0.5
         }
               
             
@@ -398,7 +454,7 @@ class G1TeleopCfg( LeggedRobotCfg ):
         # motion_file = '{LEGGED_GYM_ROOT_DIR}/resources/motions/g1/amass_phc_clean.pkl'
         # motion_file = '{LEGGED_GYM_ROOT_DIR}/resources/motions/g1/amass_phc_clean_smooth.pkl'
 
-        motion_file = '{LEGGED_GYM_ROOT_DIR}/resources/motions/g1/amass_phc_filtered.pkl'
+        motion_file = '{LEGGED_GYM_ROOT_DIR}/resources/motions/g1/test_0-DFaust_67_50025_50025_light_hopping_stiff_poses.pkl'
 
         skeleton_file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/g1/xml/g1.xml'
         marker_file = '{LEGGED_GYM_ROOT_DIR}/resources/objects/Marker/traj_marker.urdf'

@@ -24,7 +24,8 @@ from legged_gym.utils.transform import apply_rotation_to_quat_z
 from .legged_robot_config import LeggedRobotCfg
 from .lpf import ActionFilterButter, ActionFilterExp, ActionFilterButterTorch
 
-from phc.utils.motion_lib_h1 import MotionLibH1
+# from phc.utils.motion_lib_h1 import MotionLibH1
+from phc.utils.motion_lib_g1 import MotionLibG1
 from phc.learning.network_loader import load_mcp_mlp
 from smpl_sim.poselib.skeleton.skeleton3d import SkeletonTree
 from termcolor import colored
@@ -2094,9 +2095,14 @@ class LeggedRobot(BaseTask):
             motion_times = (self.episode_length_buf) * self.dt + self.motion_start_times # next frames so +1
             offset = self.env_origins + self.env_origins_init_3Doffset
 
+            print(self.motion_ids.shape)
+            print(motion_times.shape)
+            print(offset.shape)
             # motion_res = self._get_state_from_motionlib_cache(self.motion_ids, motion_times, offset= offset)
             motion_res = self._get_state_from_motionlib_cache_trimesh(self.motion_ids, motion_times, offset= offset)
-            
+            print(self.dof_pos[env_ids].shape)
+
+            print(motion_res['dof_pos'][env_ids].shape)
             self.dof_pos[env_ids] = motion_res['dof_pos'][env_ids]
             self.dof_vel[env_ids] = motion_res['dof_vel'][env_ids]
             
@@ -2847,6 +2853,7 @@ class LeggedRobot(BaseTask):
 
         # joint positions offsets and PD gains
         self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+        print(self.cfg.init_state.default_joint_angles)
         for i in range(self.num_dofs):
             name = self.dof_names[i]
             angle = self.cfg.init_state.default_joint_angles[name]
@@ -3124,7 +3131,9 @@ class LeggedRobot(BaseTask):
     def _load_motion(self):
         motion_path = self.cfg.motion.motion_file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         skeleton_path = self.cfg.motion.skeleton_file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        self._motion_lib = MotionLibH1(motion_file=motion_path, device=self.device, masterfoot_conifg=None, fix_height=False,multi_thread=False,mjcf_file=skeleton_path, extend_head=self.cfg.motion.extend_head) #multi_thread=True doesn't work
+        # self._motion_lib = MotionLibH1(motion_file=motion_path, device=self.device, masterfoot_conifg=None, fix_height=False,multi_thread=False,mjcf_file=skeleton_path, extend_head=self.cfg.motion.extend_head) #multi_thread=True doesn't work
+        self._motion_lib = MotionLibG1(motion_file=motion_path, device=self.device, masterfoot_conifg=None, fix_height=False,multi_thread=False,mjcf_file=skeleton_path, extend_head=self.cfg.motion.extend_head) #multi_thread=True doesn't work
+        
         sk_tree = SkeletonTree.from_mjcf(skeleton_path)
         
         self.skeleton_trees = [sk_tree] * self.num_envs
@@ -3198,7 +3207,8 @@ class LeggedRobot(BaseTask):
         else:
             return self.ref_motion_cache
         motion_res = self._motion_lib.get_motion_state(motion_ids, motion_times, offset=offset)
-
+        for k, v in motion_res.items():
+            print(f"{k}: {v.shape}")
         # import ipdb; ipdb.set_trace()
         # self.root_states[:,:2] = motion_res['root_pos'][:, :2]
         if self.cfg.terrain.measure_heights:

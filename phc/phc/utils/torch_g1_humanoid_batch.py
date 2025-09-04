@@ -77,6 +77,7 @@ class Humanoid_Batch:
 
     def __init__(self, mjcf_file = f"resources/robots/g1/g1.xml", extend_hand = True, extend_head = False, device = torch.device("cpu")):
         self.mjcf_data = mjcf_data = self.from_mjcf(mjcf_file) #OG extend_hand = True
+        # print(mjcf_file)
         self.extend_hand = extend_hand
         self.extend_head = extend_head
         if extend_hand:
@@ -102,7 +103,7 @@ class Humanoid_Batch:
             head_length = 0.5 #0.6, OG: 0.75
             self._offsets = torch.cat((self._offsets, torch.tensor([[[0, 0, head_length]]]).to(device)), dim = 1).to(device)
             self._local_rotation = torch.cat((self._local_rotation, torch.tensor([[[1, 0, 0, 0]]]).to(device)), dim = 1).to(device)
-            
+
         # print(self._parents)
         # print(self.model_names)
         self.joints_range = mjcf_data['joints_range'].to(device)
@@ -165,6 +166,8 @@ class Humanoid_Batch:
         # print("pose shape:", pose.shape)
         B, seq_len = pose.shape[:2]
         pose = pose[..., :len(self._parents), :] # H1 fitted joints might have extra joints
+        # pose = pose[..., :26, :]
+        # print("pose shape after fitting:", pose.shape)
         if self.extend_hand and self.extend_head and pose.shape[-2] == 32: #OG - 22, length of node names with hand links
             # print("IT is here")
             pose = torch.cat([pose, torch.zeros(B, seq_len, 1, 3).to(device).type(dtype)], dim = -2) # adding hand and head joints
@@ -174,10 +177,12 @@ class Humanoid_Batch:
             pose_mat = tRot.quaternion_to_matrix(pose_quat)
         else:
             pose_mat = pose
+        # print("pose_mat shape:", pose_mat.shape)
         if pose_mat.shape != 5:
             pose_mat = pose_mat.reshape(B, seq_len, -1, 3, 3)
         J = pose_mat.shape[2] - 1  # Exclude root
-        
+        # print("pose_mat.shape:", pose_mat.shape, J)
+
         # print("pose_mat[:, :, 1:] shape:", pose_mat[:, :, 1:].shape)
         # print("pose_mat[:, :, 0:1] shape:", pose_mat[:, :, 0:1].shape)
         # print("Trans shape", trans.shape) 
@@ -240,7 +245,7 @@ class Humanoid_Batch:
         J = self._offsets.shape[1]
         positions_world = []
         rotations_world = []
-
+        # print("self._offsets shape:", self._offsets.shape)
         expanded_offsets = (self._offsets[:, None].expand(B, seq_len, J, 3).to(device).type(dtype))
         # print(expanded_offsets.shape, J)
 

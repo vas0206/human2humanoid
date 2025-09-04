@@ -52,7 +52,7 @@ asset_descriptors = [
 ]
 sk_tree = SkeletonTree.from_mjcf(g1_xml)
 
-motion_file = "data/g1/test.pkl"
+motion_file = "data/g1/test_0-DFaust_67_50025_50025_light_hopping_stiff_poses.pkl"
 if os.path.exists(motion_file):
     print(f"loading {motion_file}")
 else:

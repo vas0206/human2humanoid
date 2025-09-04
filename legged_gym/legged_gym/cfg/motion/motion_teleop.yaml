@@ -2,15 +2,15 @@ teleop : True
 visualize : False
 recycle_motion : True
 terrain_level_down_distance : 0.5
-num_markers : 19
+num_markers : 23 #19
 
 
 # motion_file : 'resources/motions/h1/amass_phc_filtered.pkl'
-motion_file : 'resources/motions/h1/stable_punch.pkl'
-skeleton_file : 'resources/robots/h1/xml/h1.xml'
+motion_file : 'resources/motions/g1/test_0-DFaust_67_50025_50025_light_hopping_stiff_poses.pkl' #'resources/motions/h1/stable_punch.pkl'
+skeleton_file : 'resources/robots/g1/xml/g1.xml' #'resources/robots/h1/xml/h1.xml'
 marker_file : 'resources/objects/Marker/traj_marker.urdf'
-num_dof_pos_reference : 19
-num_dof_vel_reference : 19
+num_dof_pos_reference : 23 #19
+num_dof_vel_reference : 23 #19
 
 extend_hand: True
 extend_head: False
@@ -39,7 +39,9 @@ teleop_level_down_episode_length : 30
 teleop_obs_version : 'v-teleop-extend-max'
 # teleop_obs_version : 'v-teleop-extend-max-nolinvel'
 # teleop_obs_version : 'v-min2'
-teleop_selected_keypoints_names : ['left_ankle_link', 'right_ankle_link', 'left_shoulder_pitch_link','right_shoulder_pitch_link', 'left_elbow_link', 'right_elbow_link']
+
+#teleop_selected_keypoints_names : ['left_ankle_link', 'right_ankle_link', 'left_shoulder_pitch_link','right_shoulder_pitch_link', 'left_elbow_link', 'right_elbow_link']
+teleop_selected_keypoints_names : ['left_ankle_pitch_link', 'right_ankle_pitch_link', 'left_shoulder_pitch_link','right_shoulder_pitch_link', 'left_elbow_link', 'right_elbow_link']
 
 
 resample_motions_for_envs : True

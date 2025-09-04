@@ -1,8 +1,8 @@
 defaults:
   - asset_base
 
-file : 'resources/robots/h1/urdf/h1.urdf'
-name : "h1"
+file : 'resources/robots/g1/urdf/g1_23dof.urdf' #'resources/robots/h1/urdf/h1.urdf'
+name : "g1" #"h1"
 foot_name : "ankle"
 penalize_contacts_on : []
 terminate_after_contacts_on : ["pelvis", "shoulder", "hip", "knee"]

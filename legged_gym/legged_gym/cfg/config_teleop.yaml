@@ -16,7 +16,7 @@ defaults:
   - viewer: viewer_base
 
 
-project_name: "H1"
+project_name: "G1" #"H1"
 notes: "Default Notes"
 exp_name: &exp_name humanoid_smpl
 headless: True
@@ -30,7 +30,7 @@ metadata: false
 play: ${test}
 train: True
 im_dump: False
-task: "h1:teleop"
+task: "g1:teleop" #"h1:teleop"
 load_run: ""
 num_envs: 4096
 checkpoint: 0
@@ -68,7 +68,7 @@ hydra:
     env_set:
       OMP_NUM_THREADS: 1
   run:
-    dir: output/h1/${exp_name}
+    dir: output/g1/${exp_name} #output/h1/${exp_name}
 
 use_wandb: True
 
