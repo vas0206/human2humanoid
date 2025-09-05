@@ -179,7 +179,7 @@ if not USE_CACHE:
 
 class MotionLibG1(MotionLibBase):
 
-    def __init__(self, motion_file, device, fix_height=FixHeightMode.no_fix, masterfoot_conifg=None, min_length=-1, im_eval=False, multi_thread=True, extend_hand = True, extend_head = True, mjcf_file="resources/robots/g1/g1.xml", sim_timestep = 1/50):
+    def __init__(self, motion_file, device, fix_height=FixHeightMode.no_fix, masterfoot_conifg=None, min_length=-1, im_eval=False, multi_thread=True, extend_hand = True, extend_head = False, mjcf_file="resources/robots/g1/g1.xml", sim_timestep = 1/50):
         super().__init__(motion_file=motion_file, device=device, fix_height=fix_height, masterfoot_conifg=masterfoot_conifg, min_length=min_length, im_eval=im_eval, multi_thread=multi_thread, sim_timestep = sim_timestep)
         self.mesh_parsers = Humanoid_Batch(extend_hand = extend_hand, extend_head = extend_head, mjcf_file=mjcf_file)
         return
@@ -264,7 +264,20 @@ class MotionLibG1(MotionLibBase):
             worker_args = (*job_args[i], queue, i)
             worker = mp.Process(target=self.load_motion_with_skeleton, args=worker_args)
             worker.start()
+        # ! POTENTIAL SOURCE
         res_acc.update(self.load_motion_with_skeleton(*jobs[0], None, 0))
+        # print(f"res_acc length: {len(res_acc)}")
+        # print(f"res 0 shape: {res_acc[0][0].shape}")
+        # for k, v in res_acc[0][0].items():
+        #     if type(v) != int and type(v) != float and type(v) != str:
+        #         print(f"{k}: {v.shape}")
+        #     else:
+        #         print(f"{k}: {v}")
+        # for k, v in res_acc[0][1].items():
+        #     if type(v) != int and type(v) != float and type(v) != str:
+        #         print(f"{k}: {v.shape}")
+        #     else:
+                # print(f"{k}: {v}")
 
         for i in tqdm(range(len(jobs) - 1)):
             res = queue.get()
@@ -330,7 +343,7 @@ class MotionLibG1(MotionLibBase):
         
         if "dof_pos" in motions[0].__dict__:
             self.dof_pos = torch.cat([m.dof_pos for m in motions], dim=0).float().to(self._device)
-            print(self.dof_pos.shape)
+            # print(self.dof_pos.shape)
         if flags.real_traj:
             self.q_gts = torch.cat(self.q_gts, dim=0).float().to(self._device)
             self.q_grs = torch.cat(self.q_grs, dim=0).float().to(self._device)
@@ -364,7 +377,6 @@ class MotionLibG1(MotionLibBase):
         f1l = frame_idx1 + self.length_starts[motion_ids]
 
         if "dof_pos" in self.__dict__:
-            print()
             local_rot0 = self.dof_pos[f0l]
             local_rot1 = self.dof_pos[f1l]
         else:
@@ -401,16 +413,16 @@ class MotionLibG1(MotionLibBase):
         
 
         if "dof_pos" in self.__dict__: # G1 joints
-            print("G1 joints")
-            print(f'blend shape: {blend.shape}')
-            print(f'local_rot0 shape: {local_rot0.shape}')
-            print(f'local_rot1 shape: {local_rot1.shape}')
-            print(f'dof_vel0 shape: {dof_vel0.shape}')
-            print(f'dof_vel1 shape: {dof_vel1.shape}')
+            # print("G1 joints")
+            # print(f'blend shape: {blend.shape}')
+            # print(f'local_rot0 shape: {local_rot0.shape}')
+            # print(f'local_rot1 shape: {local_rot1.shape}')
+            # print(f'dof_vel0 shape: {dof_vel0.shape}')
+            # print(f'dof_vel1 shape: {dof_vel1.shape}')
             dof_vel = (1.0 - blend) * dof_vel0 + blend * dof_vel1
             dof_pos = (1.0 - blend) * local_rot0 + blend * local_rot1
         else:
-            print("not G1 joints")
+            # print("not G1 joints")
             dof_vel = (1.0 - blend_exp) * dof_vel0 + blend_exp * dof_vel1
             local_rot = torch_utils.slerp(local_rot0, local_rot1, torch.unsqueeze(blend, axis=-1))
             dof_pos = self._local_rotation_to_dof_smpl(local_rot)
@@ -460,7 +472,7 @@ class MotionLibG1(MotionLibBase):
             rb_rot[:, self.track_idx] = q_rb_rot
             body_vel[:, self.track_idx] = q_body_vel
             body_ang_vel[:, self.track_idx] = q_ang_vel
-            
+        # import ipdb; ipdb.set_trace()    
         return_dict.update({
             "root_pos": rg_pos[..., 0, :].clone(),
             "root_rot": rb_rot[..., 0, :].clone(),
@@ -481,6 +493,13 @@ class MotionLibG1(MotionLibBase):
     @staticmethod
     def load_motion_with_skeleton(ids, motion_data_list, skeleton_trees, gender_betas, fix_height, mesh_parsers, masterfoot_config,  target_heading, max_len, queue, pid):
         # ZL: loading motion with the specified skeleton. Perfoming forward kinematics to get the joint positions
+        # print(f"ids shape: {ids.shape}")
+        # print(f"motion_data_list length: {len(motion_data_list)}")
+        # for k, v in motion_data_list[0].items():
+        #     if type(v) != int and type(v) != float and type(v) != str:
+        #         print(f"{k}: {v.shape}")
+        #     else:
+        #         print(f"{k}: {v}")
         np.random.seed(np.random.randint(5000)* pid)
         res = {}
         assert (len(ids) == len(motion_data_list))
@@ -522,14 +541,15 @@ class MotionLibG1(MotionLibBase):
 
                 trans = torch.matmul(trans, torch.from_numpy(heading_delta.as_matrix().squeeze().T))
 
-            # print("pose_aa shape:", pose_aa[None,].shape)
+
             # trans, trans_fix = MotionLibSMPL.fix_trans_height(pose_aa, trans, curr_gender_beta, mesh_parsers, fix_height_mode = fix_height)
             curr_motion = mesh_parsers.fk_batch(pose_aa[None, ], trans[None, ], return_full= True, dt = dt)
             curr_motion = EasyDict({k: v.squeeze() if torch.is_tensor(v) else v for k, v in curr_motion.items() })
             
             
             res[curr_id] = (curr_file, curr_motion)
-            
+        # print("pose_aa shape:", pose_aa[None,].shape)
+        # print("trans shape:", trans[None,].shape)            
         if not queue is None:
             queue.put(res)
         else:

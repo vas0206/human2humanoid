@@ -79,7 +79,7 @@ class Humanoid_Batch:
         self.mjcf_data = mjcf_data = self.from_mjcf(mjcf_file) #OG extend_hand = True
         # print(mjcf_file)
         self.extend_hand = extend_hand
-        self.extend_head = extend_head
+        self.extend_head = False #extend_head
         if extend_hand:
             self.model_names = mjcf_data['node_names'] + ["left_hand_link", "right_hand_link"]
             # print(mjcf_data['parent_indices'])
@@ -104,6 +104,8 @@ class Humanoid_Batch:
             self._offsets = torch.cat((self._offsets, torch.tensor([[[0, 0, head_length]]]).to(device)), dim = 1).to(device)
             self._local_rotation = torch.cat((self._local_rotation, torch.tensor([[[1, 0, 0, 0]]]).to(device)), dim = 1).to(device)
 
+        # self._remove_idx = 2
+        import ipdb; ipdb.set_trace()
         # print(self._parents)
         # print(self.model_names)
         self.joints_range = mjcf_data['joints_range'].to(device)
@@ -166,6 +168,7 @@ class Humanoid_Batch:
         # print("pose shape:", pose.shape)
         B, seq_len = pose.shape[:2]
         pose = pose[..., :len(self._parents), :] # H1 fitted joints might have extra joints
+        # import ipdb; ipdb.set_trace()
         # pose = pose[..., :26, :]
         # print("pose shape after fitting:", pose.shape)
         if self.extend_hand and self.extend_head and pose.shape[-2] == 32: #OG - 22, length of node names with hand links
@@ -219,11 +222,12 @@ class Humanoid_Batch:
             return_dict.global_angular_velocity = rigidbody_angular_velocity
             return_dict.global_velocity = rigidbody_linear_velocity
             
+            
             if self.extend_hand or self.extend_head:
                 return_dict.dof_pos = pose.sum(dim = -1)[..., 1:][..., :-self._remove_idx] # you can sum it up since unitree's each joint has 1 dof. Last two are for hands. doesn't really matter. 
             else:
                 return_dict.dof_pos = pose.sum(dim = -1)[..., 1:] # you can sum it up since unitree's each joint has 1 dof. Last two are for hands. doesn't really matter. 
-            
+            # import ipdb; ipdb.set_trace()
             dof_vel = ((return_dict.dof_pos[:, 1:] - return_dict.dof_pos[:, :-1] )/dt)
             return_dict.dof_vels = torch.cat([dof_vel, dof_vel[:, -2:-1]], dim = 1)
             return_dict.fps = int(1/dt)

@@ -1504,7 +1504,7 @@ class LeggedRobot(BaseTask):
                 body_ang_vel_subset = body_ang_vel_extend[:, self._track_bodies_extend_id, :]
 
                 
-                
+                # import ipdb; ipdb.set_trace()
                 ref_rb_pos_subset = ref_body_pos_extend[:, self._track_bodies_extend_id]
                 ref_rb_rot_subset = ref_body_rot_extend[:, self._track_bodies_extend_id]
                 ref_body_vel_subset = ref_body_vel_extend[:, self._track_bodies_extend_id]
@@ -2095,14 +2095,14 @@ class LeggedRobot(BaseTask):
             motion_times = (self.episode_length_buf) * self.dt + self.motion_start_times # next frames so +1
             offset = self.env_origins + self.env_origins_init_3Doffset
 
-            print(self.motion_ids.shape)
-            print(motion_times.shape)
-            print(offset.shape)
+            # print(self.motion_ids.shape)
+            # print(motion_times.shape)
+            # print(offset.shape)
             # motion_res = self._get_state_from_motionlib_cache(self.motion_ids, motion_times, offset= offset)
             motion_res = self._get_state_from_motionlib_cache_trimesh(self.motion_ids, motion_times, offset= offset)
-            print(self.dof_pos[env_ids].shape)
+            # print(self.dof_pos[env_ids].shape)
 
-            print(motion_res['dof_pos'][env_ids].shape)
+            # print(motion_res['dof_pos'][env_ids].shape)
             self.dof_pos[env_ids] = motion_res['dof_pos'][env_ids]
             self.dof_vel[env_ids] = motion_res['dof_vel'][env_ids]
             
@@ -3207,8 +3207,8 @@ class LeggedRobot(BaseTask):
         else:
             return self.ref_motion_cache
         motion_res = self._motion_lib.get_motion_state(motion_ids, motion_times, offset=offset)
-        for k, v in motion_res.items():
-            print(f"{k}: {v.shape}")
+        # for k, v in motion_res.items():
+        #     print(f"{k}: {v.shape}")
         # import ipdb; ipdb.set_trace()
         # self.root_states[:,:2] = motion_res['root_pos'][:, :2]
         if self.cfg.terrain.measure_heights:
@@ -4424,7 +4424,7 @@ def compute_imitation_observations_max_full(root_pos, root_rot, body_pos, body_r
     heading_inv_rot_expand = heading_inv_rot.unsqueeze(-2).repeat((1, J, 1)).repeat_interleave(time_steps, 0)
     heading_rot_expand = heading_rot.unsqueeze(-2).repeat((1, J, 1)).repeat_interleave(time_steps, 0)
     
-
+    # import ipdb; ipdb.set_trace()
     ##### Body position and rotation differences
     diff_global_body_pos = ref_body_pos.view(B, time_steps, J, 3) - body_pos.view(B, 1, J, 3)
     diff_local_body_pos_flat = torch_utils.my_quat_rotate(heading_inv_rot_expand.view(-1, 4), diff_global_body_pos.view(-1, 3))
